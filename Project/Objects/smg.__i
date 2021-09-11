@@ -1,0 +1,1 @@
+"..\Src\smg.c" OPTIMIZE (7,SPEED) BROWSE INCDIR(..\Inc) DEBUG OBJECTEXTEND PRINT(.\Listings\smg.lst) OBJECT(.\Objects\smg.obj)

@@ -1,0 +1,1 @@
+"..\Src\led.c" OPTIMIZE (8,SPEED) BROWSE INCDIR(..\Inc) DEBUG OBJECTEXTEND PRINT(.\Listings\led.lst) OBJECT(.\Objects\led.obj)

@@ -1,0 +1,177 @@
+C51 COMPILER V9.60.0.0   MAIN                                                              09/11/2021 10:04:17 PAGE 1   
+
+
+C51 COMPILER V9.60.0.0, COMPILATION OF MODULE MAIN
+OBJECT MODULE PLACED IN .\Objects\main.obj
+COMPILER INVOKED BY: D:\Keil_v5\C51\BIN\C51.EXE ..\Src\main.c OPTIMIZE(7,SPEED) BROWSE INCDIR(..\Inc) DEBUG OBJECTEXTEND
+                    - PRINT(.\Listings\main.lst) OBJECT(.\Objects\main.obj)
+
+line level    source
+
+   1          #include "bsp_lib.h"
+   2          #include "main.h"
+   3          #include "smg.h"
+   4          #include "ir.h"
+   5          #include "ds1302.h"
+   6          extern u8 STA_main;
+   7          extern char char1, char2, char3;
+   8          extern u8 smg_num;
+   9          extern u8 STA_P;    //速度默认是p1，最慢的速度
+  10          extern u8 STA_F;    //默认是F1模式
+  11          extern u8 STA_Mode; //振动，敲打或者混合
+  12          extern u8 key_flag; //保存按键状态
+  13          extern unsigned long tick_ms, tick_s;
+  14          void task(unsigned long shutdown_tim1, unsigned long delay_tim2, char mode);
+  15          void shutdown(void);
+  16          void main(void)
+  17          {
+  18   1          char temp_flag = 0;
+  19   1          unsigned long tick_ms_temp;
+  20   1          led_init();
+  21   1          UartInit();
+  22   1          IR_init();
+  23   1          Timer0Init();
+  24   1          PCA_Init();
+  25   1          while (1)
+  26   1          {
+  27   2              if (key_flag == 0)
+  28   2              {
+  29   3                  break;
+  30   3              }
+  31   2              smg_num = 0;
+  32   2          }
+  33   1          while (1)
+  34   1          {
+  35   2              display_user(0x07, 20, 18, 17);
+  36   2              if (STA_Mode!=0)
+  37   2              {
+  38   3                  STA_main = STA_main | (0x80);
+  39   3                  break;
+  40   3              }
+  41   2          }
+  42   1          while (1)
+  43   1          {
+  44   2              smg_num = 0x07;
+  45   2              switch (STA_F)
+  46   2              {
+  47   3              case 1:
+  48   3                  task(900L, 0L, STA_Mode);
+  49   3                  break;
+  50   3              case 2:
+  51   3                  task(0.5 * 60 * 60, 10, STA_Mode);
+  52   3                  break;
+  53   3              case 3:
+  54   3                  task(1 * 60 * 60, 30, STA_Mode);
+C51 COMPILER V9.60.0.0   MAIN                                                              09/11/2021 10:04:17 PAGE 2   
+
+  55   3                  break;
+  56   3              case 4:
+  57   3                  task(2 * 60 * 60, 60, STA_Mode);
+  58   3                  break;
+  59   3              case 5:
+  60   3                  task(4 * 60 * 60, 2 * 60, STA_Mode);
+  61   3                  break;
+  62   3              case 6:
+  63   3                  task(6 * 60 * 60, 5 * 60, STA_Mode);
+  64   3                  break;
+  65   3              case 7:
+  66   3                  task(12 * 60 * 60, 10 * 60, STA_Mode);
+  67   3                  break;
+  68   3              case 8:
+  69   3                  task(24 * 60 * 60, 20 * 60, STA_Mode);
+  70   3                  break;
+  71   3              case 9:
+  72   3                  task(0.5 * 60 * 60, 30 * 60, STA_Mode);
+  73   3                  break;
+  74   3              default:
+  75   3                  break;
+  76   3              }
+  77   2          }
+  78   1      }
+*** WARNING C280 IN LINE 19 OF ..\Src\main.c: 'tick_ms_temp': unreferenced local variable
+  79          void task(unsigned long shutdown_tim1, unsigned long delay_tim2, char mode)
+  80          {
+  81   1          unsigned long tick_s_temp1, tick_s_temp2, tick_s_sleep;
+  82   1          unsigned long i = 0;
+  83   1          char flag1 = 0, flag2 = 0;
+  84   1          tick_s_temp1 = tick_s;
+  85   1          while (1)
+  86   1          {
+  87   2              // if ((tick_s - tick_s_temp1) > shutdown_tim1)
+  88   2              // {
+  89   2              //     printf("%lu,%lu,%lu,%lu\r\n", tick_s, tick_s_temp1, (tick_s - tick_s_temp1), shutdown_tim1)
+             -;
+  90   2              //     //break;
+  91   2              // }
+  92   2              if (STA_F == 1)
+  93   2              {
+  94   3                  if (mode == mode1) //振动模式
+  95   3                  {
+  96   4                      zhendong_mode();
+  97   4                  }
+  98   3                  else if (mode == mode2) //敲打模式
+  99   3                  {
+ 100   4                      qiaoda_mode();
+ 101   4                  }
+ 102   3                  else if (mode == mode3) //混合模式
+ 103   3                  {
+ 104   4                      hunhe_mode();
+ 105   4                  }
+ 106   3              }
+ 107   2              else
+ 108   2              {
+ 109   3                  tick_s_temp2 = tick_s;
+ 110   3                  while ((tick_s - tick_s_temp2) < delay_tim2)
+ 111   3                  {
+ 112   4                      if (mode == mode1) //振动模式
+ 113   4                      {
+ 114   5                          zhendong_mode();
+C51 COMPILER V9.60.0.0   MAIN                                                              09/11/2021 10:04:17 PAGE 3   
+
+ 115   5                      }
+ 116   4                      else if (mode == mode2) //敲打模式
+ 117   4                      {
+ 118   5                          qiaoda_mode();
+ 119   5                      }
+ 120   4                      else if (mode == mode3) //混合模式
+ 121   4                      {
+ 122   5                          hunhe_mode();
+ 123   5                      }
+ 124   4                  }
+ 125   3              }
+ 126   2              tick_s_temp2 = tick_s;
+ 127   2              while ((tick_s - tick_s_temp2) < delay_tim2)
+ 128   2              {
+ 129   3              }
+ 130   2          }
+ 131   1          // shutdown();
+ 132   1      }
+*** WARNING C280 IN LINE 79 OF ..\Src\main.c: 'shutdown_tim1': unreferenced local variable
+*** WARNING C280 IN LINE 81 OF ..\Src\main.c: 'tick_s_sleep': unreferenced local variable
+ 133          // void shutdown(void)
+ 134          // {
+ 135          //     STA_main = 0x00;
+ 136          //     motor_set(1, 0);
+ 137          //     motor_set(2, 0);
+ 138          //     display_user(0x00, 0, 0, 0);
+ 139          //     while (1)
+ 140          //     {
+ 141          
+ 142          //         printf("Shutdown!\r\n");
+ 143          //         delay_ms(100);
+ 144          //     }
+ 145          // }
+
+
+MODULE INFORMATION:   STATIC OVERLAYABLE
+   CODE SIZE        =    580    ----
+   CONSTANT SIZE    =   ----    ----
+   XDATA SIZE       =   ----    ----
+   PDATA SIZE       =   ----    ----
+   DATA SIZE        =   ----      32
+   IDATA SIZE       =   ----    ----
+   BIT SIZE         =   ----    ----
+END OF MODULE INFORMATION.
+
+
+C51 COMPILATION COMPLETE.  3 WARNING(S),  0 ERROR(S)

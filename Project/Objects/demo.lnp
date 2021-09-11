@@ -1,0 +1,7 @@
+".\Objects\STARTUP.obj",
+".\Objects\main.obj",
+".\Objects\bsp_lib.obj",
+".\Objects\smg.obj",
+".\Objects\ir.obj" 
+TO ".\Objects\demo" 
+PRINT(".\Listings\demo.m51")

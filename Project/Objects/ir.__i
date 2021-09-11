@@ -1,0 +1,1 @@
+"..\Src\ir.c" OPTIMIZE (7,SPEED) BROWSE INCDIR(..\Inc) DEBUG OBJECTEXTEND PRINT(.\Listings\ir.lst) OBJECT(.\Objects\ir.obj)

@@ -1,0 +1,1 @@
+"..\Src\bsp_lib.c" OPTIMIZE (7,SPEED) BROWSE INCDIR(..\Inc) DEBUG OBJECTEXTEND PRINT(.\Listings\bsp_lib.lst) OBJECT(.\Objects\bsp_lib.obj)
