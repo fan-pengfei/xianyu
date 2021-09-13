@@ -44,9 +44,9 @@ sfr PWMCR = 0xfe;
 
 enum
 {
-    mode1=1, //振动模式
-    mode2, //敲打模式
-    mode3, //混合模式
+    mode1 = 1, //振动模式
+    mode2,     //敲打模式
+    mode3,     //混合模式
 };
 void delay_ms(unsigned int nms);
 void delay_10us(unsigned int ten_us);
@@ -64,4 +64,14 @@ void display_user(u8 num, char s1, char s2, char s3);
 void zhendong_mode(void);
 void qiaoda_mode(void);
 void hunhe_mode(void);
+void stop_mode(void);
+//设置脉冲宽度
+void PWM0_Set_Duty(u16 Duty);
+
+//设置脉冲宽度;
+void PWM1_Set_Duty(u16 Duty);
+
+//设置脉冲宽度
+void PWM2_Set_Duty(u16 Duty);
+
 #endif

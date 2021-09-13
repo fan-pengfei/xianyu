@@ -29,7 +29,7 @@
 //枚举电机类型
 enum
 {
-    motor1, //敲打电机
-    motor2, //振动电机
+    motor1 = 1, //敲打电机
+    motor2,     //振动电机
 };
 #endif // !__MAIN_H

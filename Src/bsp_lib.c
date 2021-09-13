@@ -4,12 +4,17 @@
 #include "ir.h"
 #include "smg.h"
 #include "stdio.h"
+#include <stdarg.h>
 volatile u8 STA_P = 1; //速度默认是p1，最慢的速度
 volatile u8 STA_F = 1; //默认是F1模式
 volatile u8 STA_Mode = 0;
 volatile u8 STA_main = 0x00; //主要的状态标志位
 //第一位代表机器是否在工作
-//第二位代表是否开启了预约功能
+//第二位代表是否锁定键盘
+//第三位代表是否选择了预约
+//第四位代表是否正在预约定时中
+//第五位代表是否在关机状态中
+//第六位代表是否第一次上电 1是否
 void delay_ms(unsigned int nms) //22.1184MHz
 {
     unsigned int cnt;
@@ -59,7 +64,7 @@ void led_init(void)
     P2M1 = 0x00;
     P2M0 = 0x00;
     P3M1 = 0x00;
-    P3M0 = 0x03;
+    P3M0 = 0xfb;
     P4M1 = 0x00;
     P4M0 = 0x00;
     P5M1 = 0x00;
@@ -113,7 +118,6 @@ void PWM0_Set_Duty(u16 Duty)
 void PWM1_Set_Duty(u16 Duty)
 {
     //注意：在更新 10 位 PWM 的重载值时，必须先写高两位 XCCAPnH[1:0]，再写低 8 位 CCAPnH[7:0]。
-
     CCAPM1 = 0x40;                  //失能PCA模块1_PWM输出
     PCA_PWM1 &= ~(3 << 4);          //清零重装值高2位
     PCA_PWM1 |= (Duty >> 4) & 0x30; //设置新的重装值高2位
@@ -142,7 +146,7 @@ void motor_set(char num, int speed)
         else
         {
             PWM0_Set_Duty(1023);
-            PWM1_Set_Duty(1023 - (-speed));
+            PWM1_Set_Duty(1023 + speed);
         }
     }
     else
@@ -150,28 +154,25 @@ void motor_set(char num, int speed)
         PWM3 = 0;
         if (speed > 0)
         {
-            PWM2_Set_Duty(1023 - speed);
+            PWM2_Set_Duty((unsigned int)1023 - (unsigned int)speed);
         }
         else
         {
-            PWM2_Set_Duty(1023 - (-speed));
+            PWM2_Set_Duty((unsigned int)1023 - (unsigned int)(-speed));
         }
     }
 }
-#define FOSC 22118400L //系统频率
-#define fre 1000
-#define T0_TIM (65536 - (FOSC / 1 / fre))
 void Timer0Init(void) //1微秒@11.0592MHz
 {
     P5M0 = 0x00;
     P5M1 = 0x00;
-    AUXR |= 0x80;       //定时器时钟1T模式
-    TMOD &= 0xF0;       //设置定时器模式
-    TL0 = T0_TIM % 256; //装载低8位计时值
-    TH0 = T0_TIM / 256; //装载高8位
-    TF0 = 0;            //清除TF0标志
-    TR0 = 1;            //定时器0开始计时
-    ET0 = 1;            //使能定时器中断
+    AUXR |= 0x80; //定时器时钟1T模式
+    TMOD &= 0xF0; //设置定时器模式
+    TL0 = 0xCD;   //设置定时初始值
+    TH0 = 0xD4;   //设置定时初始值
+    TF0 = 0;      //清除TF0标志
+    TR0 = 1;      //定时器0开始计时
+    ET0 = 1;      //使能定时器中断
     EA = 1;
 }
 void UartInit(void) //115200bps@22.1184MHz
@@ -198,17 +199,56 @@ extern u8 gired_data[4];
 extern u8 key_table[17];
 volatile unsigned long tick_ms = 0;
 volatile unsigned long tick_s = 0;
+volatile unsigned int tick_min = 0;
 volatile char char1, char2, char3;
 volatile u8 smg_num = 0x00;
 volatile u8 key_flag = 29;
+volatile unsigned long cnt_ms = 0;
+volatile unsigned long cnt_s = 0;
+volatile unsigned long cnt_min = 0;
+volatile unsigned long cnt_hour = 0;
+volatile unsigned char tim_yuyue = 0;
+volatile unsigned long cnt_s_2 = 0;
 void smg_display(u8 num, char s1, char s2, char s3);
 void timer0_ISR(void) interrupt 1 using 0
 {
-    tick_ms++;
-    if (tick_ms % 1000 == 0)
+    static char flag_yuyue = 0;
+    if (((STA_main & 0x10) == 0x10) && (flag_yuyue == 0)) //一旦开始预约定时状态
     {
+        flag_yuyue++;
+    }
+    if ((cnt_hour >= tim_yuyue) && ((STA_main & 0x10) == 0x10)) //预约计时中，且到达预约时间
+    {
+        flag_yuyue = 0;
+        tim_yuyue = 1;
+        STA_main = STA_main & 0xdf; //清除开始计时状态
+        STA_main = STA_main & 0xbf; //清除预约状态
+        STA_main = 0x80;
+    }
+    tick_ms++;
+    if (tick_ms % 2000 == 0)
+    {
+        putchar('S');
+        putchar((cnt_s / 10) + '0');
+        putchar((cnt_s % 10) + '0');
+        putchar(10);
+        putchar(13);
+        putchar('M');
+        putchar((cnt_min / 10) + '0');
+        putchar((cnt_min % 10) + '0');
+        putchar(10);
+        putchar(13);
         tick_s++;
-        //  printf("%bd,%bu", flag_running, key_flag);
+        cnt_s++; //必须用一个新的变量保存定时时间
+        cnt_s_2++;
+        if (cnt_s % 60 == 0)
+        {
+            cnt_min++;
+            if (cnt_s % 3600 == 0)
+            {
+                cnt_hour++;
+            }
+        }
     }
     if (((STA_main & 0x80) == 0x80))
     {
@@ -227,6 +267,20 @@ void timer0_ISR(void) interrupt 1 using 0
         }
         char2 = 15;
         char3 = STA_F;
+    }
+    else if ((STA_main & 0x20) == 0x20)
+    {
+        smg_num = 0x07;
+        char1 = 14;
+        char2 = 0;
+        char3 = tim_yuyue - cnt_hour;
+    }
+    else if ((STA_main & 0x10) == 0x10)
+    {
+        smg_num = 0x07;
+        char1 = 14;
+        char2 = 0;
+        char3 = tim_yuyue - cnt_hour;
     }
     if ((STA_main & 0x40) == 0x40)
     {
@@ -313,76 +367,92 @@ void display_user(u8 num, char s1, char s2, char s3)
 }
 void zhendong_mode(void)
 {
+
     static u16 i;
-    char tick_ms_temp, flag = 0;
+    u16 j = 8000;
+    static char flag = 1;
     i++;
-    tick_ms_temp = tick_ms;
-    while ((tick_ms - tick_ms_temp) < 1)
+    while (j--)
         ;
-    if (i % 500 == 0)
+    // delay_ms(1);
+    motor_set(motor1, 0);
+    if (i == 500)
     {
+        i = 0;
         flag = !flag;
         if (flag)
         {
-            motor_set(2, STA_P * 100);
+            motor_set(motor2, 324 + STA_P * 50);
         }
         else
         {
-            motor_set(2, 0);
+            motor_set(motor2, 0);
         }
     }
 }
+u16 speed_motor2[9] = {1300, 1200, 1100, 900, 800, 600, 500, 400, 300};
 void qiaoda_mode(void)
 {
-    static u16 i;
-    char tick_ms_temp, flag = 0;
+    static u16 i = 0;
+    static char flag = 1;
+    u16 j = 8000;
     i++;
-    tick_ms_temp = tick_ms;
-    while ((tick_ms - tick_ms_temp) < 1)
+    while (j--)
         ;
-    if (i % 500 == 0)
+    // delay_ms
+    motor_set(motor2, 0);
+    if (i >= speed_motor2[(int)(STA_P - 1)])
     {
+        i = 0;
         flag = !flag;
         if (flag)
         {
-            motor_set(2, STA_P * 100);
+            motor_set(motor1, STA_P * 100);
         }
         else
         {
-            motor_set(2, 0);
+            motor_set(motor1, -(int)(STA_P * 100)); //无符号有符号混用会出问题
         }
     }
 }
 void hunhe_mode(void)
 {
-    static u16 i;
-    char tick_ms_temp, flag1 = 0, flag2 = 0;
+    static u16 i = 0, k = 0;
+    u16 j = 8000;
+    static char flag1 = 0, flag2 = 0;
     i++;
-    tick_ms_temp = tick_ms;
-    while ((tick_ms - tick_ms_temp) < 1)
+    k++;
+    while (j--)
         ;
-    if (i % 1000 == 0)
+    if (i >= speed_motor2[(int)(STA_P - 1)])
     {
+        i = 0;
         flag1 = !flag1;
         if (flag1)
         {
-            motor_set(1, STA_P * 100);
+            motor_set(motor1, STA_P * 100);
         }
         else
         {
-            motor_set(1, -STA_P * 100);
+            motor_set(motor1, -(int)STA_P * 100);
         }
     }
-    if (i % 500 == 0)
+    if (k == 500)
     {
+        k = 0;
         flag2 = !flag2;
         if (flag2)
         {
-            motor_set(2, STA_P * 100);
+            motor_set(motor2, STA_P * 100);
         }
         else
         {
-            motor_set(2, 0);
+            motor_set(motor2, 0);
         }
     }
+}
+void stop_mode(void)
+{
+    motor_set(motor1, 0);
+    motor_set(motor2, 0);
 }

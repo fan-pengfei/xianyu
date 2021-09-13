@@ -1,4 +1,4 @@
-C51 COMPILER V9.60.0.0   SMG                                                               09/10/2021 23:12:50 PAGE 1   
+C51 COMPILER V9.60.0.0   SMG                                                               09/13/2021 13:25:33 PAGE 1   
 
 
 C51 COMPILER V9.60.0.0, COMPILATION OF MODULE SMG
@@ -10,7 +10,7 @@ line level    source
 
    1          #include "smg.h"
    2          #include "bsp_lib.h"
-   3          unsigned char xdata smgduan[21] = {0x3f, 0x06, 0x5b, 0x4f, 0x66, 0x6d, 0x7d,
+   3          unsigned char code smgduan[21] = {0x3f, 0x06, 0x5b, 0x4f, 0x66, 0x6d, 0x7d,
    4                                            0x07, 0x7f, 0x6f, 0x77, 0x7c, 0x39, 0x5e, 0x79, 0x71, 0x79, 0x76, 0x38, 
              -0x73, 0x3e};
    5          //      {'E', 0x79},{'H', 0x76},{'L', 0x38},{'P', 0x73},{'U', 0x3E},
@@ -62,7 +62,7 @@ line level    source
   51   1          else
   52   1          {
   53   2              SMG_1 = 1;
-C51 COMPILER V9.60.0.0   SMG                                                               09/10/2021 23:12:50 PAGE 2   
+C51 COMPILER V9.60.0.0   SMG                                                               09/13/2021 13:25:33 PAGE 2   
 
   54   2              SMG_2 = 1;
   55   2              SMG_3 = 1;
@@ -71,9 +71,9 @@ line level    source
 
 
 MODULE INFORMATION:   STATIC OVERLAYABLE
-   CODE SIZE        =    172    ----
-   CONSTANT SIZE    =   ----    ----
-   XDATA SIZE       =     21    ----
+   CODE SIZE        =    154    ----
+   CONSTANT SIZE    =     21    ----
+   XDATA SIZE       =   ----    ----
    PDATA SIZE       =   ----    ----
    DATA SIZE        =   ----    ----
    IDATA SIZE       =   ----    ----

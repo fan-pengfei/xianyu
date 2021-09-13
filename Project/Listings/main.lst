@@ -1,4 +1,4 @@
-C51 COMPILER V9.60.0.0   MAIN                                                              09/11/2021 10:04:17 PAGE 1   
+C51 COMPILER V9.60.0.0   MAIN                                                              09/13/2021 13:25:33 PAGE 1   
 
 
 C51 COMPILER V9.60.0.0, COMPILATION OF MODULE MAIN
@@ -13,165 +13,221 @@ line level    source
    3          #include "smg.h"
    4          #include "ir.h"
    5          #include "ds1302.h"
-   6          extern u8 STA_main;
-   7          extern char char1, char2, char3;
-   8          extern u8 smg_num;
-   9          extern u8 STA_P;    //速度默认是p1，最慢的速度
-  10          extern u8 STA_F;    //默认是F1模式
-  11          extern u8 STA_Mode; //振动，敲打或者混合
-  12          extern u8 key_flag; //保存按键状态
-  13          extern unsigned long tick_ms, tick_s;
-  14          void task(unsigned long shutdown_tim1, unsigned long delay_tim2, char mode);
-  15          void shutdown(void);
-  16          void main(void)
-  17          {
-  18   1          char temp_flag = 0;
-  19   1          unsigned long tick_ms_temp;
-  20   1          led_init();
-  21   1          UartInit();
-  22   1          IR_init();
-  23   1          Timer0Init();
-  24   1          PCA_Init();
-  25   1          while (1)
-  26   1          {
-  27   2              if (key_flag == 0)
-  28   2              {
-  29   3                  break;
-  30   3              }
-  31   2              smg_num = 0;
-  32   2          }
-  33   1          while (1)
-  34   1          {
-  35   2              display_user(0x07, 20, 18, 17);
-  36   2              if (STA_Mode!=0)
-  37   2              {
-  38   3                  STA_main = STA_main | (0x80);
-  39   3                  break;
-  40   3              }
-  41   2          }
-  42   1          while (1)
-  43   1          {
-  44   2              smg_num = 0x07;
-  45   2              switch (STA_F)
-  46   2              {
-  47   3              case 1:
-  48   3                  task(900L, 0L, STA_Mode);
-  49   3                  break;
-  50   3              case 2:
-  51   3                  task(0.5 * 60 * 60, 10, STA_Mode);
-  52   3                  break;
-  53   3              case 3:
-  54   3                  task(1 * 60 * 60, 30, STA_Mode);
-C51 COMPILER V9.60.0.0   MAIN                                                              09/11/2021 10:04:17 PAGE 2   
+   6          #include "stdio.h"
+   7          #include "stdlib.h"
+   8          extern u8 STA_main;
+   9          extern char char1, char2, char3;
+  10          extern u8 smg_num;
+  11          extern u8 STA_P;    //速度默认是p1，最慢的速度
+  12          extern u8 STA_F;    //默认是F1模式
+  13          extern u8 STA_Mode; //振动，敲打或者混合
+  14          extern u8 key_flag; //保存按键状态
+  15          extern unsigned long tick_ms, tick_s;
+  16          extern unsigned long cnt_min;
+  17          extern unsigned long cnt_hour;
+  18          extern unsigned long cnt_s;
+  19          extern unsigned long cnt_s_2;
+  20          void task(unsigned long shutdown_tim1, unsigned long delay_tim2);
+  21          void shutdown(void);
+  22          void main(void)
+  23          {
+  24   1          char temp_flag = 0;
+  25   1          long j = 9000;
+  26   1          led_init();
+  27   1          UartInit();
+  28   1          IR_init();
+  29   1          Timer0Init();
+  30   1          PCA_Init();
+  31   1          led_init();
+  32   1          // while (1)
+  33   1          // {
+  34   1          //     motor_set(motor1, 400);
+  35   1          //     delay_ms(500);
+  36   1          //     motor_set(motor1, -400);
+  37   1          //     delay_ms(500);
+  38   1          // }
+  39   1      
+  40   1          while (1)
+  41   1          {
+  42   2              if (key_flag == 0)
+  43   2              {
+  44   3                  STA_main = STA_main & 0xf7;
+  45   3                  break;
+  46   3              }
+  47   2              smg_num = 0;
+  48   2          }
+  49   1          while (1)
+  50   1          {
+  51   2              display_user(0x07, 20, 18, 17);
+  52   2              if (STA_Mode != 0)
+  53   2              {
+  54   3                  STA_main = STA_main | (0x80);
+C51 COMPILER V9.60.0.0   MAIN                                                              09/13/2021 13:25:33 PAGE 2   
 
   55   3                  break;
-  56   3              case 4:
-  57   3                  task(2 * 60 * 60, 60, STA_Mode);
-  58   3                  break;
-  59   3              case 5:
-  60   3                  task(4 * 60 * 60, 2 * 60, STA_Mode);
-  61   3                  break;
-  62   3              case 6:
-  63   3                  task(6 * 60 * 60, 5 * 60, STA_Mode);
-  64   3                  break;
-  65   3              case 7:
-  66   3                  task(12 * 60 * 60, 10 * 60, STA_Mode);
-  67   3                  break;
-  68   3              case 8:
-  69   3                  task(24 * 60 * 60, 20 * 60, STA_Mode);
-  70   3                  break;
-  71   3              case 9:
-  72   3                  task(0.5 * 60 * 60, 30 * 60, STA_Mode);
-  73   3                  break;
-  74   3              default:
-  75   3                  break;
-  76   3              }
-  77   2          }
-  78   1      }
-*** WARNING C280 IN LINE 19 OF ..\Src\main.c: 'tick_ms_temp': unreferenced local variable
-  79          void task(unsigned long shutdown_tim1, unsigned long delay_tim2, char mode)
-  80          {
-  81   1          unsigned long tick_s_temp1, tick_s_temp2, tick_s_sleep;
-  82   1          unsigned long i = 0;
-  83   1          char flag1 = 0, flag2 = 0;
-  84   1          tick_s_temp1 = tick_s;
-  85   1          while (1)
-  86   1          {
-  87   2              // if ((tick_s - tick_s_temp1) > shutdown_tim1)
-  88   2              // {
-  89   2              //     printf("%lu,%lu,%lu,%lu\r\n", tick_s, tick_s_temp1, (tick_s - tick_s_temp1), shutdown_tim1)
-             -;
-  90   2              //     //break;
-  91   2              // }
-  92   2              if (STA_F == 1)
-  93   2              {
-  94   3                  if (mode == mode1) //振动模式
-  95   3                  {
-  96   4                      zhendong_mode();
-  97   4                  }
-  98   3                  else if (mode == mode2) //敲打模式
-  99   3                  {
- 100   4                      qiaoda_mode();
- 101   4                  }
- 102   3                  else if (mode == mode3) //混合模式
- 103   3                  {
- 104   4                      hunhe_mode();
- 105   4                  }
- 106   3              }
- 107   2              else
- 108   2              {
- 109   3                  tick_s_temp2 = tick_s;
- 110   3                  while ((tick_s - tick_s_temp2) < delay_tim2)
- 111   3                  {
- 112   4                      if (mode == mode1) //振动模式
- 113   4                      {
- 114   5                          zhendong_mode();
-C51 COMPILER V9.60.0.0   MAIN                                                              09/11/2021 10:04:17 PAGE 3   
+  56   3              }
+  57   2          }
+  58   1          while (1)
+  59   1          {
+  60   2              if (((STA_main & 0x80) == 0x80))
+  61   2              {
+  62   3                  switch (STA_F)
+  63   3                  {
+  64   4                  case 1:
+  65   4                      task(15, 0L);
+  66   4                      break;
+  67   4                  case 2:
+  68   4                      task(30, 10);
+  69   4                      break;
+  70   4                  case 3:
+  71   4                      task(60, 30);
+  72   4                      break;
+  73   4                  case 4:
+  74   4                      task(120, 60);
+  75   4                      break;
+  76   4                  case 5:
+  77   4                      task(240, 2 * 60);
+  78   4                      break;
+  79   4                  case 6:
+  80   4                      task(360, 5 * 60);
+  81   4                      break;
+  82   4                  case 7:
+  83   4                      task(720, 10 * 60);
+  84   4                      break;
+  85   4                  case 8:
+  86   4                      task(1440, 20 * 60);
+  87   4                      break;
+  88   4                  case 9:
+  89   4                      srand(tick_ms % 1000);
+  90   4                      task(60 + (rand() % 180), 30 * 60);
+  91   4                      break;
+  92   4                  default:
+  93   4                      break;
+  94   4                  }
+  95   3              }
+  96   2              if ((STA_main & 0x08) == 0x08)
+  97   2              {
+  98   3                  STA_P = 1; //速度默认是p1，最慢的速度
+  99   3                  STA_F = 1; //默认是F1模式
+ 100   3                  STA_Mode = 0;
+ 101   3                  STA_main = 0x00; //主要的状态标志位
+ 102   3                  key_flag = 20;
+ 103   3                  stop_mode();
+ 104   3                  while (1)
+ 105   3                  {
+ 106   4                      if ((STA_main & 0x08) == 0x08)
+ 107   4                      {
+ 108   5                          STA_main = STA_main & 0xf7;
+ 109   5                          break;
+ 110   5                      }
+ 111   4                      smg_num = 0;
+ 112   4                  }
+ 113   3                  while (1)
+ 114   3                  {
+ 115   4                      display_user(0x07, 20, 18, 17);
+ 116   4                      if (STA_Mode != 0)
+C51 COMPILER V9.60.0.0   MAIN                                                              09/13/2021 13:25:33 PAGE 3   
 
- 115   5                      }
- 116   4                      else if (mode == mode2) //敲打模式
  117   4                      {
- 118   5                          qiaoda_mode();
- 119   5                      }
- 120   4                      else if (mode == mode3) //混合模式
- 121   4                      {
- 122   5                          hunhe_mode();
- 123   5                      }
- 124   4                  }
- 125   3              }
- 126   2              tick_s_temp2 = tick_s;
- 127   2              while ((tick_s - tick_s_temp2) < delay_tim2)
- 128   2              {
- 129   3              }
- 130   2          }
- 131   1          // shutdown();
- 132   1      }
-*** WARNING C280 IN LINE 79 OF ..\Src\main.c: 'shutdown_tim1': unreferenced local variable
-*** WARNING C280 IN LINE 81 OF ..\Src\main.c: 'tick_s_sleep': unreferenced local variable
- 133          // void shutdown(void)
- 134          // {
- 135          //     STA_main = 0x00;
- 136          //     motor_set(1, 0);
- 137          //     motor_set(2, 0);
- 138          //     display_user(0x00, 0, 0, 0);
- 139          //     while (1)
- 140          //     {
- 141          
- 142          //         printf("Shutdown!\r\n");
- 143          //         delay_ms(100);
- 144          //     }
- 145          // }
+ 118   5                          STA_main = STA_main | 0x80;
+ 119   5                          break;
+ 120   5                      }
+ 121   4                  }
+ 122   3              }
+ 123   2              // if ((STA_main & 0x10) == 0x10)
+ 124   2              // {
+ 125   2              //     stop_mode();
+ 126   2              // }
+ 127   2          }
+ 128   1      }
+ 129          void task(unsigned long shutdown_tim1, unsigned long delay_tim2)
+ 130          {
+ 131   1          unsigned long tick_s_temp1 = 0, tick_s_temp2 = 0;
+ 132   1          unsigned long i = 0;
+ 133   1          char flag1 = 0, flag2 = 0;
+ 134   1          unsigned char STA_F_old = 0;
+ 135   1          tick_s_temp1 = tick_s;
+ 136   1          cnt_s = 0;
+ 137   1          cnt_min = 0;
+ 138   1          cnt_hour = 0;
+ 139   1          STA_F_old = STA_F;
+ 140   1          while (((STA_main & 0x08) != 0x08) && (STA_F_old == STA_F) && ((STA_main & 0x10) != 0x10))
+ 141   1          {
+ 142   2              if (cnt_min >= shutdown_tim1)
+ 143   2              {
+ 144   3                  STA_main = 0x08;
+ 145   3              }
+ 146   2              if (STA_F == 1)
+ 147   2              {
+ 148   3                  if (STA_Mode == mode1) //振动模式
+ 149   3                  {
+ 150   4                      zhendong_mode();
+ 151   4                  }
+ 152   3                  else if (STA_Mode == mode2) //敲打模式
+ 153   3                  {
+ 154   4                      qiaoda_mode();
+ 155   4                  }
+ 156   3                  else if (STA_Mode == mode3) //混合模式
+ 157   3                  {
+ 158   4                      hunhe_mode();
+ 159   4                  }
+ 160   3              }
+ 161   2              else
+ 162   2              {
+ 163   3                  cnt_s_2 = 0;
+ 164   3                  STA_F_old = STA_F;
+ 165   3                  while ((cnt_s_2 < delay_tim2) && (STA_F_old == STA_F) && ((STA_main & 0x10) != 0x10))
+ 166   3                  {
+ 167   4                      if (STA_Mode == mode1) //振动模式
+ 168   4                      {
+ 169   5                          zhendong_mode();
+ 170   5                      }
+ 171   4                      else if (STA_Mode == mode2) //敲打模式
+ 172   4                      {
+ 173   5                          qiaoda_mode();
+ 174   5                      }
+ 175   4                      else if (STA_Mode == mode3) //混合模式
+ 176   4                      {
+ 177   5                          hunhe_mode();
+ 178   5                      }
+C51 COMPILER V9.60.0.0   MAIN                                                              09/13/2021 13:25:33 PAGE 4   
+
+ 179   4                      if ((STA_main & 0x08) == 0x08)
+ 180   4                      {
+ 181   5                          break;
+ 182   5                      }
+ 183   4                      if (cnt_min >= shutdown_tim1)
+ 184   4                      {
+ 185   5                          STA_main = 0x08;
+ 186   5                      }
+ 187   4                  }
+ 188   3                  cnt_s_2 = 0;
+ 189   3                  while ((cnt_s_2 < delay_tim2) && (STA_F_old == STA_F) && ((STA_main & 0x10) != 0x10)) //停止
+ 190   3                  {
+ 191   4                      stop_mode();
+ 192   4                      if ((STA_main & 0x08) == 0x08)
+ 193   4                      {
+ 194   5                          break;
+ 195   5                      }
+ 196   4                      if (cnt_min >= shutdown_tim1)
+ 197   4                      {
+ 198   5                          STA_main = 0x08;
+ 199   5                      }
+ 200   4                  }
+ 201   3              }
+ 202   2          }
+ 203   1      }
 
 
 MODULE INFORMATION:   STATIC OVERLAYABLE
-   CODE SIZE        =    580    ----
+   CODE SIZE        =    812    ----
    CONSTANT SIZE    =   ----    ----
    XDATA SIZE       =   ----    ----
    PDATA SIZE       =   ----    ----
-   DATA SIZE        =   ----      32
+   DATA SIZE        =   ----      28
    IDATA SIZE       =   ----    ----
    BIT SIZE         =   ----    ----
 END OF MODULE INFORMATION.
 
 
-C51 COMPILATION COMPLETE.  3 WARNING(S),  0 ERROR(S)
+C51 COMPILATION COMPLETE.  0 WARNING(S),  0 ERROR(S)
